@@ -1,4 +1,3 @@
-
 # Guide de Contribution — SDK Python pour Parse Server (parsepy)
 
 Merci de l'intérêt que vous portez à ce projet ! Ce guide vous explique comment contribuer efficacement, que vous soyez développeur, testeur ou documentaliste.
@@ -256,6 +255,10 @@ git push origin feature/nom-de-votre-feature
 ```
 
 Puis ouvrez une **Pull Request** vers la branche `develop` sur GitHub.
+
+
+
+Pas de **Pull Request ** directement sur main — toujours vers develop
 
 ---
 
