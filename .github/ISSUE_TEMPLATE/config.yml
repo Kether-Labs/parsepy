@@ -1,0 +1,18 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: "Poser une question"
+    url: https://github.com/VOTRE-ORG/parse-server-sdk-python/discussions/new?category=q-a
+    about: "Vous avez une question sur l'utilisation du SDK ? Utilisez les Discussions plutôt qu'une Issue."
+
+  - name: "Proposer une idée (discussion ouverte)"
+    url: https://github.com/VOTRE-ORG/parse-server-sdk-python/discussions/new?category=ideas
+    about: "Une idée qui mérite débat avant de devenir une Issue formelle."
+
+  - name: "Discord de la communauté"
+    url: https://discord.gg/VOTRE-LIEN
+    about: "Aide en temps réel, entraide entre contributeurs."
+
+  - name: "Documentation officielle Parse Server"
+    url: https://docs.parseplatform.org
+    about: "Référence pour les endpoints REST et le comportement attendu."

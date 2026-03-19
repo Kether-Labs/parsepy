@@ -1,0 +1,112 @@
+name: "Good first issue"
+description: "Créer une tâche accessible pour les nouveaux contributeurs"
+title: "[good first issue] "
+labels: ["good first issue", "feature"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **Pour les mainteneurs uniquement.** Ce template est destiné à créer des issues bien documentées et accessibles aux nouveaux contributeurs. Remplissez chaque champ avec suffisamment de détails pour qu'un contributeur débutant puisse commencer sans aide supplémentaire.
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: "Module concerné"
+      options:
+        - "ParseClient"
+        - "ParseObject"
+        - "ParseQuery"
+        - "ParseUser"
+        - "ParseFile"
+        - "ParseACL / ParseRole"
+        - "Cloud Functions"
+        - "Push Notifications"
+        - "LiveQuery"
+        - "Tests"
+        - "Documentation"
+        - "CI/CD"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "Contexte — pourquoi cette tâche existe"
+      description: "Expliquez le besoin de façon simple. Pas de jargon."
+      placeholder: |
+        ParseQuery doit permettre de filtrer les objets dont un champ
+        de type tableau contient TOUS les éléments d'une liste donnée.
+        C'est une fonctionnalité courante de l'API Parse REST mais
+        elle n'est pas encore implémentée dans notre SDK.
+    validations:
+      required: true
+
+  - type: textarea
+    id: task
+    attributes:
+      label: "La tâche précise à réaliser"
+      description: "Soyez très spécifique. Listez exactement ce qui est attendu."
+      placeholder: |
+        1. Ajouter la méthode `contains_all(key, values)` à la classe `ParseQuery`
+           dans `src/parse_sdk/query.py`
+        2. Cette méthode doit ajouter le filtre `{"$all": values}` au paramètre `where`
+        3. Écrire les tests unitaires correspondants dans `tests/unit/test_query.py`
+        4. Mettre à jour la docstring de la classe `ParseQuery`
+    validations:
+      required: true
+
+  - type: textarea
+    id: api_example
+    attributes:
+      label: "API Python attendue"
+      description: "Montrez exactement comment la fonctionnalité sera utilisée."
+      render: python
+      placeholder: |
+        query = ParseQuery("Article")
+        query.contains_all("tags", ["python", "async", "sdk"])
+        results = await query.find()
+        # Retourne uniquement les articles ayant les 3 tags
+
+        # Correspondance REST Parse :
+        # GET /classes/Article?where={"tags":{"$all":["python","async","sdk"]}}
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: "Fichiers à modifier"
+      description: "Listez précisément les fichiers concernés."
+      placeholder: |
+        - `src/parse_sdk/query.py` → ajouter la méthode `contains_all()`
+        - `tests/unit/test_query.py` → ajouter les tests
+    validations:
+      required: true
+
+  - type: textarea
+    id: resources
+    attributes:
+      label: "Ressources utiles"
+      description: "Liens vers la doc Parse, les fichiers existants similaires, etc."
+      placeholder: |
+        - Doc Parse REST : https://docs.parseplatform.org/rest/guide/#queries
+        - Méthode similaire déjà implémentée : `contained_in()` dans `query.py` ligne 87
+        - Guide de contribution : CONTRIBUTING.md
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "Critères d'acceptation"
+      description: "Comment saura-t-on que la tâche est terminée et correcte ?"
+      placeholder: |
+        - [ ] La méthode `contains_all()` existe dans `ParseQuery`
+        - [ ] Elle génère le bon filtre `$all` dans le paramètre `where`
+        - [ ] Elle retourne `self` pour permettre le chaînage
+        - [ ] Les tests passent avec `pytest`
+        - [ ] La docstring est complète avec un exemple
+    validations:
+      required: true

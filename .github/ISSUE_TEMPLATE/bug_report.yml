@@ -1,0 +1,160 @@
+name: "Bug report"
+description: "Signaler un comportement incorrect ou inattendu du SDK"
+title: "[bug] "
+labels: ["bug", "needs discussion"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce bug. Remplissez les champs ci-dessous avec le maximum de détails pour nous aider à le reproduire et le corriger rapidement.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description du bug"
+      description: "Une description claire et concise de ce qui se passe."
+      placeholder: "Quand j'appelle ParseObject.save(), la méthode lève une exception alors que..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: "Code minimal pour reproduire"
+      description: "Le code le plus court possible qui déclenche le bug."
+      render: python
+      placeholder: |
+        from parse_sdk import ParseClient, ParseObject
+
+        client = ParseClient(
+            app_id="myApp",
+            rest_key="myKey",
+            server_url="https://my-parse.com/parse"
+        )
+
+        obj = ParseObject("GameScore")
+        obj.set("score", 100)
+        await obj.save()  # ← erreur ici
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Comportement attendu"
+      description: "Ce qui aurait dû se passer."
+      placeholder: "L'objet devrait être sauvegardé et obj.object_id devrait être défini."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "Comportement observé"
+      description: "Ce qui s'est passé réellement. Copiez le message d'erreur ou le traceback complet."
+      render: shell
+      placeholder: |
+        Traceback (most recent call last):
+          File "...", line X, in ...
+        ParseError: ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: "Module concerné"
+      description: "Quel module du SDK est impliqué ?"
+      multiple: false
+      options:
+        - "ParseClient"
+        - "ParseObject"
+        - "ParseQuery"
+        - "ParseUser"
+        - "ParseFile"
+        - "ParseACL / ParseRole"
+        - "Cloud Functions"
+        - "Push Notifications"
+        - "LiveQuery"
+        - "Intégration Django"
+        - "Intégration FastAPI"
+        - "Intégration Flask"
+        - "Autre / Je ne sais pas"
+    validations:
+      required: true
+
+  - type: input
+    id: sdk_version
+    attributes:
+      label: "Version du SDK"
+      description: "Sortie de `pip show parse-server-sdk`"
+      placeholder: "0.2.1"
+    validations:
+      required: true
+
+  - type: input
+    id: python_version
+    attributes:
+      label: "Version Python"
+      description: "Sortie de `python --version`"
+      placeholder: "3.11.4"
+    validations:
+      required: true
+
+  - type: input
+    id: parse_version
+    attributes:
+      label: "Version Parse Server"
+      description: "Version de votre instance Parse Server (si connue)"
+      placeholder: "6.3.0"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Système d'exploitation"
+      multiple: false
+      options:
+        - "Linux (Ubuntu / Debian)"
+        - "Linux (autre)"
+        - "macOS"
+        - "Windows"
+        - "Docker / Container"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: async_mode
+    attributes:
+      label: "Mode d'utilisation"
+      description: "Utilisez-vous l'API async ou sync ?"
+      options:
+        - "Async (await)"
+        - "Sync (_sync)"
+        - "Les deux"
+        - "Non applicable"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Contexte additionnel"
+      description: "Screenshots, logs supplémentaires, ou toute autre information utile."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Vérifications avant de soumettre"
+      options:
+        - label: "J'ai cherché dans les issues existantes et ce bug n'a pas déjà été signalé"
+          required: true
+        - label: "J'ai testé avec la dernière version du SDK"
+          required: true
+        - label: "Mon code minimal reproduit bien le problème"
+          required: true

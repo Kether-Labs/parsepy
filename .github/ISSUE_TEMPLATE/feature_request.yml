@@ -1,0 +1,108 @@
+name: "Feature request"
+description: "Proposer une nouvelle fonctionnalité ou une amélioration du SDK"
+title: "[feature] "
+labels: ["feature", "needs discussion"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Avant de soumettre, vérifiez que votre idée n'est pas déjà dans la [Roadmap](../blob/main/ROADMAP.md) ou dans les issues ouvertes. Les nouvelles fonctionnalités sont discutées **avant** d'être développées — merci d'attendre la validation d'un mainteneur avant de coder.
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: "Module concerné"
+      description: "À quel module cette fonctionnalité appartient-elle ?"
+      multiple: false
+      options:
+        - "ParseClient"
+        - "ParseObject"
+        - "ParseQuery"
+        - "ParseUser"
+        - "ParseFile"
+        - "ParseACL / ParseRole"
+        - "Cloud Functions"
+        - "Push Notifications"
+        - "LiveQuery"
+        - "Intégration Django"
+        - "Intégration FastAPI"
+        - "Intégration Flask"
+        - "CLI"
+        - "Nouveau module"
+        - "Autre / Infrastructure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Le problème à résoudre"
+      description: "Décrivez la friction ou la limitation actuelle. Commencez par 'En tant que développeur Python, je veux... parce que...'"
+      placeholder: |
+        En tant que développeur Python, je veux pouvoir utiliser des requêtes
+        régulières sur les champs de texte parce qu'actuellement je dois
+        récupérer tous les objets et filtrer côté client, ce qui est inefficace.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: "La solution proposée"
+      description: "Décrivez l'API Python que vous souhaiteriez avoir. Montrez du code d'exemple."
+      render: python
+      placeholder: |
+        # Ce que je voudrais pouvoir écrire :
+        query = ParseQuery("Article")
+        query.matches("title", r"^Python.*", flags="i")  # regex case-insensitive
+        results = await query.find()
+    validations:
+      required: true
+
+  - type: textarea
+    id: parse_api
+    attributes:
+      label: "Correspondance avec l'API Parse Server REST"
+      description: "Si vous connaissez le endpoint Parse REST correspondant, indiquez-le. Cela accélère le développement."
+      render: shell
+      placeholder: |
+        # Endpoint REST correspondant :
+        GET /classes/Article?where={"title":{"$regex":"^Python","$options":"i"}}
+
+        # Documentation Parse :
+        https://docs.parseplatform.org/rest/guide/#queries
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives considérées"
+      description: "Avez-vous essayé d'autres approches ? Pourquoi ne conviennent-elles pas ?"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: willing
+    attributes:
+      label: "Souhaitez-vous développer cette fonctionnalité ?"
+      options:
+        - "Oui, je peux l'implémenter"
+        - "Oui, avec de l'aide"
+        - "Non, je propose l'idée seulement"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Vérifications avant de soumettre"
+      options:
+        - label: "J'ai vérifié que cette fonctionnalité n'est pas déjà dans la Roadmap"
+          required: true
+        - label: "J'ai vérifié que cette fonctionnalité n'a pas déjà été proposée dans les issues"
+          required: true
+        - label: "Cette fonctionnalité correspond à une vraie limitation actuelle du SDK"
+          required: true

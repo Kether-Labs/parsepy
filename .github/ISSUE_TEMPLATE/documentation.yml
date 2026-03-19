@@ -1,0 +1,58 @@
+name: "Documentation"
+description: "Signaler un problème dans la doc ou proposer une amélioration"
+title: "[docs] "
+labels: ["documentation"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Une bonne documentation est aussi importante que le code. Merci de nous aider à l'améliorer !
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: "Type de problème"
+      options:
+        - "Information incorrecte ou obsolète"
+        - "Exemple de code qui ne fonctionne pas"
+        - "Explication manquante ou insuffisante"
+        - "Nouvelle page / section à créer"
+        - "Faute de frappe ou de grammaire"
+        - "Traduction"
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: "Où se trouve le problème ?"
+      description: "URL de la page ou chemin du fichier concerné."
+      placeholder: "docs/guides/queries.md — section 'Filtres sur les tableaux'"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: "Contenu actuel (problématique)"
+      description: "Copiez le passage concerné, ou décrivez ce qui manque."
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: "Contenu suggéré"
+      description: "Proposez la correction ou l'ajout souhaité. Du code d'exemple est toujours bienvenu."
+      render: markdown
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: willing
+    attributes:
+      label: "Contribution"
+      options:
+        - label: "Je peux soumettre une PR pour corriger ce problème"
