@@ -40,7 +40,7 @@ Comportements inacceptables :
 - Commentaires insultants ou dégradants
 - Trolling ou attaques personnelles
 
-Tout manquement peut être signalé à : **[contact@votre-projet.dev]**
+Tout manquement peut être signalé à : **[]**
 
 ---
 
