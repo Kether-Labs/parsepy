@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Configuration Parse Server de test
 # Ces valeurs correspondent au docker-compose.test.yml
@@ -28,6 +27,7 @@ TEST_SERVER_URL = "http://localhost:1337/parse"
 # ---------------------------------------------------------------------------
 # Fixtures HTTP (disponibles dès maintenant pour les tests unitaires)
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def parse_server_url() -> str:
@@ -53,6 +53,7 @@ def parse_credentials() -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Fixtures de types Parse (utiles pour tous les modules)
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def sample_geopoint() -> dict[str, float]:

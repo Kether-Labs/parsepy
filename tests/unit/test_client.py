@@ -12,11 +12,12 @@ from __future__ import annotations
 import pytest
 
 from parse_sdk import ParseClient
-from parse_sdk.client import get_client, _current_client
+from parse_sdk.client import get_client
+
 
 class TestParseClientInit:
-
     """Tests d'initialisation de ParseClient."""
+
     def test_init_with_required_params(self) -> None:
         """ParseClient s'instancie avec les 3 paramètres obligatoires."""
         client = ParseClient(
@@ -53,8 +54,8 @@ class TestParseClientInit:
         # Le HTTPClient interne supprime le slash
         assert client._http_client._server_url == "https://test.parse.com/parse"
 
-class TestParseClientValidation:
 
+class TestParseClientValidation:
     """Tests de validation des paramètres."""
 
     def test_init_raises_on_empty_app_id(self) -> None:
@@ -93,7 +94,6 @@ class TestParseClientValidation:
                 server_url="",
             )
 
-
     def test_init_raises_on_whitespace_only(self) -> None:
         """ValueError si le paramètre n'est que des espaces."""
         with pytest.raises(ValueError, match="app_id"):
@@ -103,44 +103,46 @@ class TestParseClientValidation:
                 server_url="https://test.com",
             )
 
-class TestGetClient:
 
+class TestGetClient:
     """Tests pour get_client()."""
 
     def test_get_client_before_init_raises(self) -> None:
         """RuntimeError si get_client() appelé avant initialisation."""
         # Reset le client global
         import parse_sdk.client as client_module
+
         client_module._current_client = None
-        
+
         with pytest.raises(RuntimeError, match="ParseClient n'a pas été initialisé"):
             get_client()
 
     def test_get_client_returns_http_client(self) -> None:
         """get_client() retourne le ParseHTTPClient configuré."""
         from parse_sdk._http import ParseHTTPClient
-        
+
         client = ParseClient(
             app_id="test",
             rest_key="test",
             server_url="https://test.com",
         )
-        
+
         http = get_client()
         assert isinstance(http, ParseHTTPClient)
         assert http is client._http_client
 
     def test_get_client_returns_same_instance(self) -> None:
         """get_client() retourne toujours la même instance."""
-        client = ParseClient(
+        _ = ParseClient(
             app_id="test",
             rest_key="test",
             server_url="https://test.com",
         )
-        
+
         http1 = get_client()
         http2 = get_client()
         assert http1 is http2
+
 
 class TestParseClientProperties:
     """Tests des propriétés de ParseClient."""
@@ -152,6 +154,6 @@ class TestParseClientProperties:
             rest_key="test",
             server_url="https://test.com",
         )
-        
+
         http = client.http_client
         assert http is client._http_client

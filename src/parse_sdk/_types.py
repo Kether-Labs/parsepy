@@ -17,10 +17,10 @@ import base64
 from datetime import datetime, timezone
 from typing import Any
 
-
 # ---------------------------------------------------------------------------
 # Classe de base
 # ---------------------------------------------------------------------------
+
 
 class ParseType:
     """Classe de base pour tous les types spéciaux Parse.
@@ -33,7 +33,7 @@ class ParseType:
         raise NotImplementedError
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "ParseType":
+    def from_parse(cls, data: dict[str, Any]) -> ParseType:
         """Désérialise depuis une réponse JSON de Parse Server."""
         raise NotImplementedError
 
@@ -44,6 +44,7 @@ class ParseType:
 # ---------------------------------------------------------------------------
 # GeoPoint
 # ---------------------------------------------------------------------------
+
 
 class GeoPoint(ParseType):
     """Coordonnées géographiques (latitude, longitude).
@@ -62,9 +63,13 @@ class GeoPoint(ParseType):
 
     def __init__(self, latitude: float, longitude: float) -> None:
         if not -90 <= latitude <= 90:
-            raise ValueError(f"Latitude invalide : {latitude} (doit être entre -90 et 90)")
+            raise ValueError(
+                f"Latitude invalide : {latitude} (doit être entre -90 et 90)"
+            )
         if not -180 <= longitude <= 180:
-            raise ValueError(f"Longitude invalide : {longitude} (doit être entre -180 et 180)")
+            raise ValueError(
+                f"Longitude invalide : {longitude} (doit être entre -180 et 180)"
+            )
         self.latitude = latitude
         self.longitude = longitude
 
@@ -76,7 +81,7 @@ class GeoPoint(ParseType):
         }
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "GeoPoint":
+    def from_parse(cls, data: dict[str, Any]) -> GeoPoint:
         return cls(latitude=data["latitude"], longitude=data["longitude"])
 
     def __eq__(self, other: object) -> bool:
@@ -88,6 +93,7 @@ class GeoPoint(ParseType):
 # ---------------------------------------------------------------------------
 # Pointer
 # ---------------------------------------------------------------------------
+
 
 class Pointer(ParseType):
     """Référence vers un autre objet Parse (relation de type clé étrangère).
@@ -114,7 +120,7 @@ class Pointer(ParseType):
         }
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "Pointer":
+    def from_parse(cls, data: dict[str, Any]) -> Pointer:
         return cls(class_name=data["className"], object_id=data["objectId"])
 
     def __eq__(self, other: object) -> bool:
@@ -126,6 +132,7 @@ class Pointer(ParseType):
 # ---------------------------------------------------------------------------
 # ParseDate
 # ---------------------------------------------------------------------------
+
 
 class ParseDate(ParseType):
     """Date et heure au format ISO 8601 avec timezone UTC.
@@ -150,12 +157,14 @@ class ParseDate(ParseType):
         self.value = value
 
     def to_parse(self) -> dict[str, Any]:
-        iso = self.value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") + \
-              f"{self.value.microsecond // 1000:03d}Z"
+        iso = (
+            self.value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.")
+            + f"{self.value.microsecond // 1000:03d}Z"
+        )
         return {"__type": "Date", "iso": iso}
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "ParseDate":
+    def from_parse(cls, data: dict[str, Any]) -> ParseDate:
         iso = data["iso"]
         dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
         return cls(dt)
@@ -169,6 +178,7 @@ class ParseDate(ParseType):
 # ---------------------------------------------------------------------------
 # ParseBytes
 # ---------------------------------------------------------------------------
+
 
 class ParseBytes(ParseType):
     """Données binaires encodées en base64.
@@ -192,7 +202,7 @@ class ParseBytes(ParseType):
         }
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "ParseBytes":
+    def from_parse(cls, data: dict[str, Any]) -> ParseBytes:
         return cls(base64.b64decode(data["base64"]))
 
     def __eq__(self, other: object) -> bool:
@@ -204,6 +214,7 @@ class ParseBytes(ParseType):
 # ---------------------------------------------------------------------------
 # Opérations atomiques Parse
 # ---------------------------------------------------------------------------
+
 
 class Increment(ParseType):
     """Opération atomique d'incrémentation d'un champ numérique.
@@ -225,7 +236,7 @@ class Increment(ParseType):
         return {"__op": "Increment", "amount": self.amount}
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "Increment":
+    def from_parse(cls, data: dict[str, Any]) -> Increment:
         return cls(amount=data["amount"])
 
 
@@ -247,7 +258,7 @@ class AddToArray(ParseType):
         return {"__op": "Add", "objects": self.objects}
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "AddToArray":
+    def from_parse(cls, data: dict[str, Any]) -> AddToArray:
         return cls(objects=data["objects"])
 
 
@@ -269,7 +280,7 @@ class AddUniqueToArray(ParseType):
         return {"__op": "AddUnique", "objects": self.objects}
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "AddUniqueToArray":
+    def from_parse(cls, data: dict[str, Any]) -> AddUniqueToArray:
         return cls(objects=data["objects"])
 
 
@@ -291,7 +302,7 @@ class RemoveFromArray(ParseType):
         return {"__op": "Remove", "objects": self.objects}
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "RemoveFromArray":
+    def from_parse(cls, data: dict[str, Any]) -> RemoveFromArray:
         return cls(objects=data["objects"])
 
 
@@ -307,7 +318,7 @@ class DeleteField(ParseType):
         return {"__op": "Delete"}
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> "DeleteField":
+    def from_parse(cls, data: dict[str, Any]) -> DeleteField:
         return cls()
 
 

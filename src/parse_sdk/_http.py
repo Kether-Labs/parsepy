@@ -24,7 +24,6 @@ import httpx
 
 from .exceptions import (
     ParseConnectionError,
-    ParseError,
     ParseTimeoutError,
     raise_parse_error,
 )
@@ -215,8 +214,11 @@ class ParseHTTPClient:
 
                 logger.debug("← %d %s", response.status_code, path)
 
-                if response.status_code in _RETRYABLE_STATUS and attempt < self._max_retries - 1:
-                    delay = _RETRY_BASE_DELAY * (2 ** attempt)
+                if (
+                    response.status_code in _RETRYABLE_STATUS
+                    and attempt < self._max_retries - 1
+                ):
+                    delay = _RETRY_BASE_DELAY * (2**attempt)
                     logger.warning(
                         "Erreur %d sur %s — retry dans %.1fs",
                         response.status_code,
@@ -228,19 +230,19 @@ class ParseHTTPClient:
 
                 return self._handle_response(response)
 
-            except httpx.TimeoutException as exc:
+            except httpx.TimeoutException:
                 last_error = ParseTimeoutError(
                     f"Timeout sur {method} {path} après {self._timeout}s"
                 )
                 if attempt < self._max_retries - 1:
-                    await asyncio.sleep(_RETRY_BASE_DELAY * (2 ** attempt))
+                    await asyncio.sleep(_RETRY_BASE_DELAY * (2**attempt))
 
             except httpx.NetworkError as exc:
                 last_error = ParseConnectionError(
                     f"Erreur réseau sur {method} {path} : {exc}"
                 )
                 if attempt < self._max_retries - 1:
-                    await asyncio.sleep(_RETRY_BASE_DELAY * (2 ** attempt))
+                    await asyncio.sleep(_RETRY_BASE_DELAY * (2**attempt))
 
         raise last_error or ParseConnectionError(f"Échec de la requête {method} {path}")
 
@@ -289,8 +291,11 @@ class ParseHTTPClient:
                         **kwargs,
                     )
 
-                if response.status_code in _RETRYABLE_STATUS and attempt < self._max_retries - 1:
-                    time.sleep(_RETRY_BASE_DELAY * (2 ** attempt))
+                if (
+                    response.status_code in _RETRYABLE_STATUS
+                    and attempt < self._max_retries - 1
+                ):
+                    time.sleep(_RETRY_BASE_DELAY * (2**attempt))
                     continue
 
                 return self._handle_response(response)
@@ -298,12 +303,12 @@ class ParseHTTPClient:
             except httpx.TimeoutException as exc:
                 last_error = ParseTimeoutError(str(exc))
                 if attempt < self._max_retries - 1:
-                    time.sleep(_RETRY_BASE_DELAY * (2 ** attempt))
+                    time.sleep(_RETRY_BASE_DELAY * (2**attempt))
 
             except httpx.NetworkError as exc:
                 last_error = ParseConnectionError(str(exc))
                 if attempt < self._max_retries - 1:
-                    time.sleep(_RETRY_BASE_DELAY * (2 ** attempt))
+                    time.sleep(_RETRY_BASE_DELAY * (2**attempt))
 
         raise last_error or ParseConnectionError(f"Échec de la requête {method} {path}")
 

@@ -23,7 +23,6 @@ Usage rapide :
 """
 
 from __future__ import annotations
-from .client import ParseClient, get_client
 
 # Types spéciaux — disponibles dès le départ
 from ._types import (
@@ -39,6 +38,7 @@ from ._types import (
     decode_parse_value,
     encode_parse_value,
 )
+from .client import ParseClient, get_client
 
 # Exceptions — toujours disponibles
 from .exceptions import (
