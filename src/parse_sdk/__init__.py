@@ -23,6 +23,7 @@ Usage rapide :
 """
 
 from __future__ import annotations
+from .client import ParseClient, get_client
 
 # Types spéciaux — disponibles dès le départ
 from ._types import (
@@ -76,6 +77,8 @@ __license__ = "MIT"
 __all__ = [
     # Version
     "__version__",
+    "ParseClient",
+    "get_client",
     # Types spéciaux
     "GeoPoint",
     "Pointer",
