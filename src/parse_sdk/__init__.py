@@ -38,6 +38,7 @@ from ._types import (
     decode_parse_value,
     encode_parse_value,
 )
+from .client import ParseClient, get_client
 
 # Exceptions — toujours disponibles
 from .exceptions import (
@@ -76,6 +77,8 @@ __license__ = "MIT"
 __all__ = [
     # Version
     "__version__",
+    "ParseClient",
+    "get_client",
     # Types spéciaux
     "GeoPoint",
     "Pointer",

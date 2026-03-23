@@ -35,10 +35,10 @@ from parse_sdk.exceptions import (
     raise_parse_error,
 )
 
-
 # ---------------------------------------------------------------------------
 # GeoPoint
 # ---------------------------------------------------------------------------
+
 
 class TestGeoPoint:
     def test_to_parse(self) -> None:
@@ -76,6 +76,7 @@ class TestGeoPoint:
 # Pointer
 # ---------------------------------------------------------------------------
 
+
 class TestPointer:
     def test_to_parse(self) -> None:
         ptr = Pointer(class_name="Post", object_id="abc123")
@@ -99,6 +100,7 @@ class TestPointer:
 # ---------------------------------------------------------------------------
 # ParseDate
 # ---------------------------------------------------------------------------
+
 
 class TestParseDate:
     def test_to_parse_utc(self) -> None:
@@ -126,6 +128,7 @@ class TestParseDate:
 # ParseBytes
 # ---------------------------------------------------------------------------
 
+
 class TestParseBytes:
     def test_to_parse(self) -> None:
         data = b"hello"
@@ -147,6 +150,7 @@ class TestParseBytes:
 # ---------------------------------------------------------------------------
 # Opérations atomiques
 # ---------------------------------------------------------------------------
+
 
 class TestAtomicOps:
     def test_increment(self) -> None:
@@ -172,6 +176,7 @@ class TestAtomicOps:
 # ---------------------------------------------------------------------------
 # decode_parse_value / encode_parse_value
 # ---------------------------------------------------------------------------
+
 
 class TestCodecFunctions:
     def test_decode_geopoint(self) -> None:
@@ -210,6 +215,7 @@ class TestCodecFunctions:
 # ---------------------------------------------------------------------------
 # Exceptions
 # ---------------------------------------------------------------------------
+
 
 class TestExceptions:
     def test_parse_error_base(self) -> None:

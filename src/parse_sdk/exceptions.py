@@ -37,6 +37,7 @@ class ParseError(Exception):
 # Erreurs réseau et connexion
 # ---------------------------------------------------------------------------
 
+
 class ParseConnectionError(ParseError):
     """Impossible de joindre le serveur Parse (réseau, timeout, DNS).
 
@@ -61,6 +62,7 @@ class ParseTimeoutError(ParseConnectionError):
 # Erreurs d'authentification et de session
 # ---------------------------------------------------------------------------
 
+
 class ParseAuthenticationError(ParseError):
     """Erreur d'authentification : identifiants invalides ou session expirée.
 
@@ -81,6 +83,7 @@ class ParseSessionExpiredError(ParseAuthenticationError):
 # ---------------------------------------------------------------------------
 # Erreurs sur les objets
 # ---------------------------------------------------------------------------
+
 
 class ParseObjectNotFoundError(ParseError):
     """L'objet demandé n'existe pas dans la base Parse.
@@ -107,7 +110,9 @@ class ParseDuplicateValueError(ParseError):
     """
 
     def __init__(self, field: str = "") -> None:
-        msg = f"Valeur dupliquée sur le champ '{field}'" if field else "Valeur dupliquée"
+        msg = (
+            f"Valeur dupliquée sur le champ '{field}'" if field else "Valeur dupliquée"
+        )
         super().__init__(code=137, message=msg)
 
 
@@ -122,6 +127,7 @@ class ParseInvalidValueError(ParseError):
 # Erreurs de permissions
 # ---------------------------------------------------------------------------
 
+
 class ParsePermissionError(ParseError):
     """Opération refusée par les ACL ou les Class-Level Permissions.
 
@@ -135,13 +141,16 @@ class ParseMasterKeyRequiredError(ParsePermissionError):
     Code Parse : 119.
     """
 
-    def __init__(self, message: str = "Le Master Key est requis pour cette opération") -> None:
+    def __init__(
+        self, message: str = "Le Master Key est requis pour cette opération"
+    ) -> None:
         super().__init__(code=119, message=message)
 
 
 # ---------------------------------------------------------------------------
 # Erreurs de requêtes
 # ---------------------------------------------------------------------------
+
 
 class ParseQueryError(ParseError):
     """Erreur dans la construction ou l'exécution d'une requête ParseQuery.
@@ -164,6 +173,7 @@ class ParseInvalidQueryError(ParseQueryError):
 # Erreurs utilisateur
 # ---------------------------------------------------------------------------
 
+
 class ParseUsernameTakenError(ParseError):
     """Ce nom d'utilisateur est déjà pris.
 
@@ -171,7 +181,11 @@ class ParseUsernameTakenError(ParseError):
     """
 
     def __init__(self, username: str = "") -> None:
-        msg = f"Le nom d'utilisateur '{username}' est déjà pris" if username else "Nom d'utilisateur déjà pris"
+        msg = (
+            f"Le nom d'utilisateur '{username}' est déjà pris"
+            if username
+            else "Nom d'utilisateur déjà pris"
+        )
         super().__init__(code=202, message=msg)
 
 
@@ -200,6 +214,7 @@ class ParseEmailNotFoundError(ParseError):
 # Erreurs de fichiers
 # ---------------------------------------------------------------------------
 
+
 class ParseFileError(ParseError):
     """Erreur lors d'une opération sur un ParseFile.
 
@@ -222,6 +237,7 @@ class ParseFileNotFoundError(ParseFileError):
 # Erreurs de Cloud Functions
 # ---------------------------------------------------------------------------
 
+
 class ParseCloudFunctionError(ParseError):
     """Erreur levée par une Cloud Function côté serveur.
 
@@ -229,7 +245,11 @@ class ParseCloudFunctionError(ParseError):
     """
 
     def __init__(self, function_name: str = "", message: str = "") -> None:
-        full_msg = f"Cloud Function '{function_name}' : {message}" if function_name else message
+        full_msg = (
+            f"Cloud Function '{function_name}' : {message}"
+            if function_name
+            else message
+        )
         super().__init__(code=141, message=full_msg or "Erreur dans la Cloud Function")
 
 
@@ -240,7 +260,11 @@ class ParseCloudFunctionNotFoundError(ParseCloudFunctionError):
     """
 
     def __init__(self, function_name: str = "") -> None:
-        msg = f"Cloud Function '{function_name}' introuvable" if function_name else "Cloud Function introuvable"
+        msg = (
+            f"Cloud Function '{function_name}' introuvable"
+            if function_name
+            else "Cloud Function introuvable"
+        )
         ParseError.__init__(self, code=141, message=msg)
 
 
@@ -248,13 +272,17 @@ class ParseCloudFunctionNotFoundError(ParseCloudFunctionError):
 # Erreurs de débit
 # ---------------------------------------------------------------------------
 
+
 class ParseRateLimitError(ParseError):
     """Limite de débit dépassée — trop de requêtes en peu de temps.
 
     Code Parse : 155.
     """
 
-    def __init__(self, message: str = "Limite de requêtes dépassée — réessayez dans quelques secondes") -> None:
+    def __init__(
+        self,
+        message: str = "Limite de requêtes dépassée — réessayez dans quelques secondes",
+    ) -> None:
         super().__init__(code=155, message=message)
 
 
@@ -262,19 +290,23 @@ class ParseRateLimitError(ParseError):
 # Erreur de Push Notifications
 # ---------------------------------------------------------------------------
 
+
 class ParsePushError(ParseError):
     """Erreur lors de l'envoi d'une notification push.
 
     Code Parse : 112.
     """
 
-    def __init__(self, message: str = "Erreur lors de l'envoi de la notification push") -> None:
+    def __init__(
+        self, message: str = "Erreur lors de l'envoi de la notification push"
+    ) -> None:
         super().__init__(code=112, message=message)
 
 
 # ---------------------------------------------------------------------------
 # Erreur de LiveQuery
 # ---------------------------------------------------------------------------
+
 
 class ParseLiveQueryError(ParseError):
     """Erreur de connexion ou d'abonnement LiveQuery.
