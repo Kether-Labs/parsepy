@@ -159,3 +159,16 @@ class ParseObject:
         from ._types import RemoveFromArray
 
         return self.set(key, RemoveFromArray(values))
+
+    def unset(self, key: str) -> ParseObject:
+        """Supprime un champ de l'objet.
+
+        Args:
+            key: Le nom du champ à supprimer.
+
+        Returns:
+            L'instance actuelle (pour le chaînage).
+        """
+        from ._types import DeleteField
+
+        return self.set(key, DeleteField())
