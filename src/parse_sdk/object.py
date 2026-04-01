@@ -131,3 +131,17 @@ class ParseObject:
         from ._types import AddToArray
 
         return self.set(key, AddToArray(values))
+
+    def add_unique(self, key: str, values: list[Any]) -> ParseObject:
+        """Ajoute des éléments à un tableau seulement s'ils sont absents.
+
+        Args:
+            key: Le nom du champ.
+            values: Liste des valeurs à ajouter.
+
+        Returns:
+            L'instance actuelle (pour le chaînage).
+        """
+        from ._types import AddUniqueToArray
+
+        return self.set(key, AddUniqueToArray(values))
