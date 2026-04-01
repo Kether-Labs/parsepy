@@ -53,9 +53,6 @@ class ParseObject:
         Returns:
             L'instance actuelle (pour le chaînage).
         """
-        # On encode la valeur (ex: datetime -> ParseDate)
-        encoded_value = encode_parse_value(value)
-
         self._data[key] = value
         self._dirty_keys.add(key)
 
