@@ -145,3 +145,17 @@ class ParseObject:
         from ._types import AddUniqueToArray
 
         return self.set(key, AddUniqueToArray(values))
+
+    def remove_from_array(self, key: str, values: list[Any]) -> ParseObject:
+        """Supprime des éléments d'un champ tableau.
+
+        Args:
+            key: Le nom du champ.
+            values: Liste des éléments à supprimer.
+
+        Returns:
+            L'instance actuelle (pour le chaînage).
+        """
+        from ._types import RemoveFromArray
+
+        return self.set(key, RemoveFromArray(values))
