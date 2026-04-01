@@ -117,3 +117,17 @@ class ParseObject:
         from ._types import Increment
 
         return self.set(key, Increment(amount))
+
+    def add_to_array(self, key: str, values: list[Any]) -> ParseObject:
+        """Ajoute des éléments à un champ tableau.
+
+        Args:
+            key: Le nom du champ.
+            values: Liste des valeurs à ajouter.
+
+        Returns:
+            L'instance actuelle (pour le chaînage).
+        """
+        from ._types import AddToArray
+
+        return self.set(key, AddToArray(values))
