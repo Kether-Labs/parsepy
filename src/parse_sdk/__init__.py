@@ -38,7 +38,6 @@ from ._types import (
     decode_parse_value,
     encode_parse_value,
 )
-from .object import ParseObject
 from .client import ParseClient, get_client
 
 # Exceptions — toujours disponibles
@@ -66,6 +65,7 @@ from .exceptions import (
     ParseTimeoutError,
     ParseUsernameTakenError,
 )
+from .object import ParseObject
 
 # NOTE : ParseClient, ParseObject, ParseQuery, ParseUser, ParseFile, etc.
 # seront ajoutés ici au fur et à mesure de leur implémentation.
