@@ -66,7 +66,7 @@ git --version      # git version 2.x
 
 ### 1. Forker et cloner le dépôt
 
-`````bash
+```bash
 # 1. Forkez le projet depuis GitHub (bouton "Fork" en haut à droite)
 
 # 2. Clonez votre fork localement
@@ -75,18 +75,16 @@ cd parsepy
 
 # 3. Ajoutez le dépôt original comme remote "upstream"
 git remote add upstream https://github.com/Kether-Labs/parsepy.git
+```
 
-### 4. Créer un environnement virtuel
+### 2. Créer un environnement virtuel
 
 ```bash
 # Avec venv (standard)
 python -m venv .venv
 source .venv/bin/activate        # Linux / macOS
 .venv\Scripts\activate           # Windows
-````
-
-`````
-
+```
 ### 3. Installer les dépendances de développement
 
 ```bash
