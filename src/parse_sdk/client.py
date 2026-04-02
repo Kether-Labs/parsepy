@@ -7,13 +7,7 @@ installe pour configurer sa connexion à Parse Server.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ._http import ParseHTTPClient
-
-if TYPE_CHECKING:
-    pass
-
 # Variable de module pour le pattern singleton/global
 _current_client: ParseHTTPClient | None = None
 
