@@ -252,3 +252,34 @@ class TestExceptions:
         err = ParseSessionExpiredError()
         assert isinstance(err, ParseError)
         assert isinstance(err, Exception)
+
+    def test_raise_parse_error_specialized_constructors(self) -> None:
+        """raise_parse_error ne doit pas crasher pour les classes avec
+        un constructeur spécialisé (ex: ParseObjectNotFoundError).
+        L'instance levée doit être du bon type ET avoir code/message corrects.
+        """
+        from parse_sdk.exceptions import (
+            ParseDuplicateValueError,
+            ParseObjectNotFoundError,
+            ParseUsernameTakenError,
+        )
+
+        # Code 101 → ParseObjectNotFoundError (constructeur: class_name, object_id)
+        with pytest.raises(ParseObjectNotFoundError) as exc_info:
+            raise_parse_error(101, "Object not found")
+        assert exc_info.value.code == 101
+        assert exc_info.value.message == "Object not found"
+
+        # Code 137 → ParseDuplicateValueError (constructeur: field)
+        with pytest.raises(ParseDuplicateValueError) as exc_info2:
+            raise_parse_error(137, "Duplicate value")
+        assert exc_info2.value.code == 137
+
+        # Code 202 → ParseUsernameTakenError (constructeur: username)
+        with pytest.raises(ParseUsernameTakenError) as exc_info3:
+            raise_parse_error(202, "Username taken")
+        assert exc_info3.value.code == 202
+
+        # Tous doivent être instanceof ParseError
+        for exc in [exc_info, exc_info2, exc_info3]:
+            assert isinstance(exc.value, ParseError)
