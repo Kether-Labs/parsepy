@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ._types import encode_parse_value
+from ._types import decode_parse_value, encode_parse_value
 from .client import get_client
 
 
@@ -41,7 +41,8 @@ class ParseObject:
         Returns:
             La valeur du champ (décodée si type spécial Parse).
         """
-        return self._data.get(key, default)
+        value = self._data.get(key, default)
+        return decode_parse_value(value)
 
     def set(self, key: str, value: Any) -> ParseObject:
         """Définit la valeur d'un champ.
