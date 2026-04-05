@@ -1,8 +1,6 @@
 """
-Module ParseObject — CRUD et gestion des données.
-
-Ce module fournit la classe ParseObject qui représente un objet stocké
-sur Parse Server. Elle permet de lire, modifier et sauvegarder des données.
+Gestion des objets Parse (ParseObject).
+Lecture, modification et sauvegarde des données.
 """
 
 from __future__ import annotations
@@ -25,10 +23,7 @@ class ParseObject:
         self.class_name = class_name
         self.object_id = object_id
 
-        # Données internes de l'objet
         self._data: dict[str, Any] = {}
-
-        # Liste des clés modifiées localement qui doivent être envoyées au serveur
         self._dirty_keys: set[str] = set()
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -65,17 +60,21 @@ class ParseObject:
         """Sauvegarde l'objet sur Parse Server.
 
         Cette méthode envoie uniquement les champs modifiés (dirty).
+
+        Args:
+            use_master_key: Utilise le Master Key si True.
+            session_token: Session token à utiliser pour cette requête.
+
+        Raises:
+            ParseError: Si le serveur retourne une erreur.
         """
         if not self._dirty_keys:
             return
 
-        # Construction du payload (données à envoyer)
         payload = {key: encode_parse_value(self._data[key]) for key in self._dirty_keys}
-
         client = get_client()
 
         if self.object_id:
-            # Mise à jour (PUT)
             path = f"/classes/{self.class_name}/{self.object_id}"
             response = await client.put(
                 path,
@@ -84,7 +83,6 @@ class ParseObject:
                 session_token=session_token,
             )
         else:
-            # Création (POST)
             path = f"/classes/{self.class_name}"
             response = await client.post(
                 path,
@@ -93,14 +91,162 @@ class ParseObject:
                 session_token=session_token,
             )
 
-            # On récupère l'objectId généré par le serveur
             if "objectId" in response:
                 self.object_id = response["objectId"]
 
-        # Une fois sauvegardé, l'objet n'est plus "dirty"
+        self._data.update(response)
         self._dirty_keys.clear()
 
-    # --- MÉTHODES À IMPLÉMENTER POUR L'ISSUE #17 ---
+    def save_sync(
+        self, use_master_key: bool = False, session_token: str | None = None
+    ) -> None:
+        """Version synchrone de `save()`.
+
+        Args:
+            use_master_key: Utilise le Master Key si True.
+            session_token: Session token à utiliser pour cette requête.
+
+        Raises:
+            ParseError: Si le serveur retourne une erreur.
+        """
+        if not self._dirty_keys:
+            return
+
+        payload = {key: encode_parse_value(self._data[key]) for key in self._dirty_keys}
+        client = get_client()
+
+        if self.object_id:
+            path = f"/classes/{self.class_name}/{self.object_id}"
+            response = client.put_sync(
+                path,
+                json=payload,
+                use_master_key=use_master_key,
+                session_token=session_token,
+            )
+        else:
+            path = f"/classes/{self.class_name}"
+            response = client.post_sync(
+                path,
+                json=payload,
+                use_master_key=use_master_key,
+                session_token=session_token,
+            )
+
+            if "objectId" in response:
+                self.object_id = response["objectId"]
+
+        self._data.update(response)
+        self._dirty_keys.clear()
+
+    async def fetch(
+        self, use_master_key: bool = False, session_token: str | None = None
+    ) -> ParseObject:
+        """Récupère les dernières données de l'objet depuis le serveur.
+
+        Met à jour l'instance actuelle et efface les modifications locales non sauvegardées.
+
+        Args:
+            use_master_key: Utilise le Master Key si True.
+            session_token: Session token à utiliser pour cette requête.
+
+        Returns:
+            L'instance actuelle de ParseObject.
+
+        Raises:
+            RuntimeError: Si l'objet n'a pas d'objectId.
+            ParseError: Si le serveur retourne une erreur.
+        """
+        if not self.object_id:
+            raise RuntimeError("Impossible de fetch un objet sans objectId")
+
+        client = get_client()
+        path = f"/classes/{self.class_name}/{self.object_id}"
+        response = await client.get(
+            path, use_master_key=use_master_key, session_token=session_token
+        )
+
+        self._data = response
+        self._dirty_keys.clear()
+        return self
+
+    def fetch_sync(
+        self, use_master_key: bool = False, session_token: str | None = None
+    ) -> ParseObject:
+        """Version synchrone de `fetch()`.
+
+        Args:
+            use_master_key: Utilise le Master Key si True.
+            session_token: Session token à utiliser pour cette requête.
+
+        Returns:
+            L'instance actuelle de ParseObject.
+
+        Raises:
+            RuntimeError: Si l'objet n'a pas d'objectId.
+        """
+        if not self.object_id:
+            raise RuntimeError("Impossible de fetch un objet sans objectId")
+
+        client = get_client()
+        path = f"/classes/{self.class_name}/{self.object_id}"
+        response = client.get_sync(
+            path, use_master_key=use_master_key, session_token=session_token
+        )
+
+        self._data = response
+        self._dirty_keys.clear()
+        return self
+
+    async def delete(
+        self, use_master_key: bool = False, session_token: str | None = None
+    ) -> None:
+        """Supprime l'objet sur Parse Server.
+
+        Args:
+            use_master_key: Utilise le Master Key si True.
+            session_token: Session token à utiliser pour cette requête.
+
+        Raises:
+            RuntimeError: Si l'objet n'a pas d'objectId.
+            ParseError: Si le serveur retourne une erreur.
+        """
+        if not self.object_id:
+            raise RuntimeError("Impossible de supprimer un objet sans objectId")
+
+        client = get_client()
+        path = f"/classes/{self.class_name}/{self.object_id}"
+        await client.delete(
+            path, use_master_key=use_master_key, session_token=session_token
+        )
+
+        self.object_id = None
+        self._data.clear()
+        self._dirty_keys.clear()
+
+    def delete_sync(
+        self, use_master_key: bool = False, session_token: str | None = None
+    ) -> None:
+        """Version synchrone de `delete()`.
+
+        Args:
+            use_master_key: Utilise le Master Key si True.
+            session_token: Session token à utiliser pour cette requête.
+
+        Raises:
+            RuntimeError: Si l'objet n'a pas d'objectId.
+        """
+        if not self.object_id:
+            raise RuntimeError("Impossible de supprimer un objet sans objectId")
+
+        client = get_client()
+        path = f"/classes/{self.class_name}/{self.object_id}"
+        client.delete_sync(
+            path, use_master_key=use_master_key, session_token=session_token
+        )
+
+        self.object_id = None
+        self._data.clear()
+        self._dirty_keys.clear()
 
     def increment(self, key: str, amount: int = 1) -> ParseObject:
         """Incrémente un champ numérique.

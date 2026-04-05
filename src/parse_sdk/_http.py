@@ -1,16 +1,8 @@
 """
-Couche HTTP interne du SDK Parse Server Python.
+Couche HTTP interne pour Parse Server.
 
-Ce module est PRIVÉ. Il ne doit jamais être importé directement par les
-utilisateurs du SDK. Tous les modules publics (ParseObject, ParseQuery, etc.)
-passent exclusivement par ce module pour leurs requêtes HTTP.
-
-Responsabilités :
-- Gérer le client httpx (async + sync)
-- Injecter les headers Parse obligatoires
-- Retry automatique avec backoff exponentiel
-- Convertir les erreurs HTTP en exceptions ParseError
-- Logger les requêtes/réponses pour le debug
+Usage interne uniquement — ne pas importer manuellement.
+Tous les modules (ParseObject, ParseQuery, etc.) passent par ici pour leurs requêtes.
 """
 
 from __future__ import annotations
@@ -75,24 +67,15 @@ class ParseHTTPClient:
         self._max_retries = max_retries
         self._session_token: str | None = None
 
-        # Client async partagé — évite de rouvrir une connexion à chaque requête
+        # Client async partagé pour réutiliser les connexions
         self._async_client: httpx.AsyncClient | None = None
-
-    # ------------------------------------------------------------------
-    # Gestion du session token (défini par ParseUser après login)
-    # ------------------------------------------------------------------
 
     def set_session_token(self, token: str | None) -> None:
         """Définit le session token à envoyer dans les requêtes suivantes."""
         self._session_token = token
 
     def clear_session_token(self) -> None:
-        """Supprime le session token (après logout)."""
         self._session_token = None
-
-    # ------------------------------------------------------------------
-    # Construction des headers
-    # ------------------------------------------------------------------
 
     def _build_headers(
         self,
@@ -125,10 +108,6 @@ class ParseHTTPClient:
 
         return headers
 
-    # ------------------------------------------------------------------
-    # Gestion du client async
-    # ------------------------------------------------------------------
-
     async def _get_async_client(self) -> httpx.AsyncClient:
         """Retourne le client async partagé, en le créant si nécessaire."""
         if self._async_client is None or self._async_client.is_closed:
@@ -139,14 +118,9 @@ class ParseHTTPClient:
         return self._async_client
 
     async def close(self) -> None:
-        """Ferme proprement le client HTTP async."""
         if self._async_client and not self._async_client.is_closed:
             await self._async_client.aclose()
             self._async_client = None
-
-    # ------------------------------------------------------------------
-    # Méthode principale : requête async avec retry
-    # ------------------------------------------------------------------
 
     async def request(
         self,
@@ -246,10 +220,6 @@ class ParseHTTPClient:
 
         raise last_error or ParseConnectionError(f"Échec de la requête {method} {path}")
 
-    # ------------------------------------------------------------------
-    # Wrapper synchrone
-    # ------------------------------------------------------------------
-
     def request_sync(
         self,
         method: str,
@@ -312,10 +282,6 @@ class ParseHTTPClient:
 
         raise last_error or ParseConnectionError(f"Échec de la requête {method} {path}")
 
-    # ------------------------------------------------------------------
-    # Traitement de la réponse HTTP
-    # ------------------------------------------------------------------
-
     def _handle_response(self, response: httpx.Response) -> dict[str, Any]:
         """Parse la réponse HTTP et lève l'exception appropriée si erreur.
 
@@ -342,10 +308,6 @@ class ParseHTTPClient:
 
         return body
 
-    # ------------------------------------------------------------------
-    # Helpers HTTP raccourcis
-    # ------------------------------------------------------------------
-
     async def get(self, path: str, **kwargs: Any) -> dict[str, Any]:
         """GET asynchrone."""
         return await self.request("GET", path, **kwargs)
@@ -359,5 +321,20 @@ class ParseHTTPClient:
         return await self.request("PUT", path, **kwargs)
 
     async def delete(self, path: str, **kwargs: Any) -> dict[str, Any]:
-        """DELETE asynchrone."""
         return await self.request("DELETE", path, **kwargs)
+
+    def get_sync(self, path: str, **kwargs: Any) -> dict[str, Any]:
+        """GET synchrone."""
+        return self.request_sync("GET", path, **kwargs)
+
+    def post_sync(self, path: str, **kwargs: Any) -> dict[str, Any]:
+        """POST synchrone."""
+        return self.request_sync("POST", path, **kwargs)
+
+    def put_sync(self, path: str, **kwargs: Any) -> dict[str, Any]:
+        """PUT synchrone."""
+        return self.request_sync("PUT", path, **kwargs)
+
+    def delete_sync(self, path: str, **kwargs: Any) -> dict[str, Any]:
+        """DELETE synchrone."""
+        return self.request_sync("DELETE", path, **kwargs)
