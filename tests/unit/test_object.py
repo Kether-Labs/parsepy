@@ -7,7 +7,9 @@ from parse_sdk._types import (
     AddToArray,
     AddUniqueToArray,
     DeleteField,
+    GeoPoint,
     Increment,
+    Pointer,
     RemoveFromArray,
 )
 
@@ -94,7 +96,7 @@ async def test_object_save_dirty_tracking():
         async def mock_post(*_args, **_kwargs):
             return {"objectId": "newId", "createdAt": "..."}
 
-        mock_http.post = mock_post
+        mock_http.post.side_effect = mock_post
         mock_get_client.return_value = mock_http
 
         obj = ParseObject("GameScore")
@@ -106,3 +108,84 @@ async def test_object_save_dirty_tracking():
         # Après sauvegarde, les dirty_keys doivent être vides
         assert len(obj._dirty_keys) == 0
         assert obj.object_id == "newId"
+        assert obj.get("score") == 100
+
+
+@pytest.mark.asyncio
+async def test_object_fetch():
+    with patch("parse_sdk.object.get_client") as mock_get_client:
+        mock_http = MagicMock()
+
+        async def mock_get(*_args, **_kwargs):
+            return {"objectId": "abc", "playerName": "Bob", "score": 500}
+
+        mock_http.get.side_effect = mock_get
+        mock_get_client.return_value = mock_http
+
+        obj = ParseObject("GameScore", "abc")
+        obj.set("score", 100)  # Modification locale
+        assert len(obj._dirty_keys) == 1
+
+        await obj.fetch()
+
+        assert obj.get("playerName") == "Bob"
+        assert obj.get("score") == 500
+        assert len(obj._dirty_keys) == 0
+
+
+@pytest.mark.asyncio
+async def test_object_delete():
+    with patch("parse_sdk.object.get_client") as mock_get_client:
+        mock_http = MagicMock()
+
+        async def mock_delete(*_args, **_kwargs):
+            return {}
+
+        mock_http.delete.side_effect = mock_delete
+        mock_get_client.return_value = mock_http
+
+        obj = ParseObject("GameScore", "abc")
+        await obj.delete()
+
+        assert obj.object_id is None
+        assert obj._data == {}
+        mock_http.delete.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_object_save_with_geopoint():
+    with patch("parse_sdk.object.get_client") as mock_get_client:
+        mock_http = MagicMock()
+        async def mock_post(_path, json, **_kwargs):
+            assert json["location"]["__type"] == "GeoPoint"
+            assert json["location"]["latitude"] == 48.8566
+            return {"objectId": "geoId"}
+
+        mock_http.post.side_effect = mock_post
+        mock_get_client.return_value = mock_http
+
+        obj = ParseObject("Place")
+        obj.set("location", GeoPoint(48.8566, 2.3522))
+        await obj.save()
+
+        assert obj.object_id == "geoId"
+
+
+@pytest.mark.asyncio
+async def test_object_save_with_pointer():
+    with patch("parse_sdk.object.get_client") as mock_get_client:
+        mock_http = MagicMock()
+        async def mock_post(_path, json, **_kwargs):
+            assert json["owner"]["__type"] == "Pointer"
+            assert json["owner"]["className"] == "_User"
+            assert json["owner"]["objectId"] == "user123"
+            return {"objectId": "postId"}
+
+        mock_http.post.side_effect = mock_post
+        mock_get_client.return_value = mock_http
+
+        obj = ParseObject("Post")
+        obj.set("owner", Pointer("_User", "user123"))
+        await obj.save()
+
+        assert obj.object_id == "postId"
