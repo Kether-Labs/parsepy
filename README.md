@@ -16,8 +16,8 @@ Parse Server dispose de SDK officiels pour JavaScript, iOS, Android et .NET — 
 
 | Module | Statut |
 |---|---|
-| `ParseClient` — configuration et HTTP | 🚧 En cours |
-| `ParseObject` — CRUD | 📋 Planifié |
+| `ParseClient` — configuration et HTTP | ✅ Terminé |
+| `ParseObject` — CRUD | ✅ Terminé |
 | `ParseQuery` — requêtes | 📋 Planifié |
 | `ParseUser` — authentification | 📋 Planifié |
 | `ParseFile` — fichiers | 📋 Planifié |
