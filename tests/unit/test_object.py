@@ -156,6 +156,7 @@ async def test_object_delete():
 async def test_object_save_with_geopoint():
     with patch("parse_sdk.object.get_client") as mock_get_client:
         mock_http = MagicMock()
+
         async def mock_post(_path, json, **_kwargs):
             assert json["location"]["__type"] == "GeoPoint"
             assert json["location"]["latitude"] == 48.8566
@@ -175,6 +176,7 @@ async def test_object_save_with_geopoint():
 async def test_object_save_with_pointer():
     with patch("parse_sdk.object.get_client") as mock_get_client:
         mock_http = MagicMock()
+
         async def mock_post(_path, json, **_kwargs):
             assert json["owner"]["__type"] == "Pointer"
             assert json["owner"]["className"] == "_User"
