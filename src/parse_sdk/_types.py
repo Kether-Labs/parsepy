@@ -318,7 +318,7 @@ class DeleteField(ParseType):
         return {"__op": "Delete"}
 
     @classmethod
-    def from_parse(cls, data: dict[str, Any]) -> DeleteField:
+    def from_parse(cls, _data: dict[str, Any]) -> DeleteField:
         return cls()
 
 
