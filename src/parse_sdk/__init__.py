@@ -65,6 +65,8 @@ from .exceptions import (
     ParseTimeoutError,
     ParseUsernameTakenError,
 )
+from .object import ParseObject
+from .user import ParseUser
 
 # NOTE : ParseClient, ParseObject, ParseQuery, ParseUser, ParseFile, etc.
 # seront ajoutés ici au fur et à mesure de leur implémentation.
@@ -78,11 +80,13 @@ __all__ = [
     # Version
     "__version__",
     "ParseClient",
+    "ParseObject",
     "get_client",
     # Types spéciaux
     "GeoPoint",
     "Pointer",
     "ParseDate",
+    "ParseUser",
     "ParseBytes",
     "Increment",
     "AddToArray",
