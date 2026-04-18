@@ -90,6 +90,11 @@ class ParseHTTPClient:
         """Supprime le session token (après logout)."""
         self._session_token = None
 
+    @property
+    def session_token(self) -> str | None:
+        """Retourne le session token actuel."""
+        return self._session_token
+
     # ------------------------------------------------------------------
     # Construction des headers
     # ------------------------------------------------------------------

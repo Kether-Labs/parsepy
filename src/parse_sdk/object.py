@@ -69,7 +69,7 @@ class ParseObject:
     # Access to data
     # ------------------------------------------------------------------
 
-    def get(self, key: str, default: Any | None = None) -> Any:
+    def get(self, key: str, default: Any | None = None) -> Any | None:
         """Retrieves the value of a field.
 
         Args:
@@ -90,6 +90,14 @@ class ParseObject:
         """
         self._data[key] = value
         self._dirty.add(key)
+
+    def __getitem__(self, key: str) -> Any:
+        """Allows dict-style access: obj['key']"""
+        return self._data[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """Allows dict-style assignment: obj['key'] = value"""
+        self.set(key, value)
 
     # ------------------------------------------------------------------
     # CRUD Operations - Async

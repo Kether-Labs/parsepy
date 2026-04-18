@@ -66,6 +66,7 @@ from .exceptions import (
     ParseUsernameTakenError,
 )
 from .object import ParseObject
+from .user import ParseUser
 
 # NOTE : ParseClient, ParseObject, ParseQuery, ParseUser, ParseFile, etc.
 # seront ajoutés ici au fur et à mesure de leur implémentation.
@@ -85,6 +86,7 @@ __all__ = [
     "GeoPoint",
     "Pointer",
     "ParseDate",
+    "ParseUser",
     "ParseBytes",
     "Increment",
     "AddToArray",

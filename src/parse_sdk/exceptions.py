@@ -189,6 +189,13 @@ class ParseUsernameTakenError(ParseError):
         super().__init__(code=202, message=msg)
 
 
+class ParseInvalidSessionError(ParseError):
+    """Raised when session token is invalid or expired (code 209)."""
+
+    def __init__(self, message: str = "Invalid session token"):
+        super().__init__(code=209, message=message)
+
+
 class ParseEmailTakenError(ParseError):
     """Cette adresse email est déjà associée à un compte.
 
@@ -354,4 +361,20 @@ def raise_parse_error(code: int, message: str) -> None:
     exc_class = PARSE_ERROR_MAP.get(code, ParseError)
     if exc_class is ParseError:
         raise ParseError(code=code, message=message)
+
+    # Exceptions avec signature spéciale
+    if exc_class is ParseUsernameTakenError:
+        raise ParseUsernameTakenError(username=message)
+    if exc_class is ParseEmailTakenError:
+        raise ParseEmailTakenError(email=message)
+    if exc_class is ParseObjectNotFoundError:
+        raise ParseObjectNotFoundError()
+    if exc_class is ParseDuplicateValueError:
+        raise ParseDuplicateValueError(field=message)
+    if exc_class is ParseFileNotFoundError:
+        raise ParseFileNotFoundError(filename=message)
+    if exc_class is ParseCloudFunctionNotFoundError:
+        raise ParseCloudFunctionNotFoundError(function_name=message)
+
+    # Exceptions avec signature standard (message=...)
     raise exc_class(message=message)  # type: ignore[call-arg]
