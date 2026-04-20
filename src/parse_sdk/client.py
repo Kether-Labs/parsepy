@@ -1,20 +1,12 @@
 """
-ParseClient — Point d'entrée principal du SDK.
-
-Ce module fournit la classe publique ParseClient que chaque utilisateur
-installe pour configurer sa connexion à Parse Server.
+Point d'entrée principal pour configurer le SDK.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ._http import ParseHTTPClient
 
-if TYPE_CHECKING:
-    pass
-
-# Variable de module pour le pattern singleton/global
+# Instance globale partagée (singleton)
 _current_client: ParseHTTPClient | None = None
 
 
@@ -72,7 +64,6 @@ class ParseClient:
         self._validate_required_param(rest_key, "rest_key")
         self._validate_required_param(server_url, "server_url")
 
-        # Stocker la configuration (optionnel mais utile pour debugging)
         self._app_id = app_id
         self._rest_key = rest_key
         self._server_url = server_url
@@ -80,7 +71,7 @@ class ParseClient:
         self._timeout = timeout
         self._max_retries = max_retries
 
-        # Créer le client HTTP interne
+        # Client HTTP interne
         self._http_client = ParseHTTPClient(
             app_id=app_id,
             rest_key=rest_key,
@@ -90,7 +81,6 @@ class ParseClient:
             max_retries=max_retries,
         )
 
-        # Enregistrer comme client global
         global _current_client
         _current_client = self._http_client
 

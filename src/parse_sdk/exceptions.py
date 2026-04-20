@@ -354,4 +354,11 @@ def raise_parse_error(code: int, message: str) -> None:
     exc_class = PARSE_ERROR_MAP.get(code, ParseError)
     if exc_class is ParseError:
         raise ParseError(code=code, message=message)
-    raise exc_class(message=message)  # type: ignore[call-arg]
+
+    # Les classes spécialisées ont des constructeurs qui ne correspondent pas
+    # tous à la signature (code, message). On crée l'instance via __new__ et
+    # on l'initialise avec ParseError.__init__ pour conserver le bon type
+    # tout en passant les bons arguments — isinstance() fonctionne toujours.
+    exc = exc_class.__new__(exc_class)
+    ParseError.__init__(exc, code=code, message=message)
+    raise exc
