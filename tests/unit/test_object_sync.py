@@ -76,7 +76,7 @@ class TestObjectFetchSync:
     def test_object_fetch_sync_requires_object_id(self):
         """Test that fetch_sync requires object_id."""
         obj = ParseObject("GameScore")
-        
+
         with pytest.raises(ValueError, match="object_id"):
             obj.fetch_sync()
 
@@ -102,6 +102,6 @@ class TestObjectDeleteSync:
     def test_object_delete_sync_requires_object_id(self):
         """Test that delete_sync requires object_id."""
         obj = ParseObject("GameScore")
-        
+
         with pytest.raises(ValueError, match="object_id"):
             obj.delete_sync()
