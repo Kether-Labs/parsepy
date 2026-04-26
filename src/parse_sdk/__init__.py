@@ -67,7 +67,7 @@ from .exceptions import (
 )
 from .object import ParseObject
 
-# NOTE : ParseClient, ParseObject, ParseQuery, ParseUser, ParseFile, etc.
+# NOTE : ParseQuery, ParseUser, ParseFile, etc.
 # seront ajoutés ici au fur et à mesure de leur implémentation.
 # Chaque contributeur qui implémente un module doit aussi l'exporter ici.
 

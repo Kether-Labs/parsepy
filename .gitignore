@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Documents de formation / présentations — ne pas versionner dans le SDK
+*.pdf
+*.pptx
+*.docx
