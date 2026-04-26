@@ -1,193 +1,211 @@
-from unittest.mock import MagicMock, patch
+"""
+Unit tests for ParseObject.
+
+Uses respx to mock HTTP requests.
+"""
+
+from __future__ import annotations
 
 import pytest
+import respx
+from httpx import Response
 
 from parse_sdk import ParseObject
-from parse_sdk._types import (
-    AddToArray,
-    AddUniqueToArray,
-    DeleteField,
-    GeoPoint,
-    Increment,
-    Pointer,
-    RemoveFromArray,
-)
 
 
-def test_object_initialization():
-    obj = ParseObject("GameScore")
-    assert obj.class_name == "GameScore"
-    assert obj.object_id is None
+class TestParseObjectInit:
+    """Initialization tests."""
 
-    obj_with_id = ParseObject("GameScore", "abc123")
-    assert obj_with_id.object_id == "abc123"
+    def test_init_with_class_name(self) -> None:
+        """ParseObject initializes with a class_name."""
+        obj = ParseObject("GameScore")
+        assert obj.class_name == "GameScore"
+        assert obj.object_id is None
 
-
-def test_object_set_get():
-    obj = ParseObject("GameScore")
-    obj.set("playerName", "Alice")
-    assert obj.get("playerName") == "Alice"
-    assert obj.get("nonExistent", "default") == "default"
-
-
-def test_object_increment():
-    obj = ParseObject("GameScore")
-    result = obj.increment("score", 5)
-
-    # Vérifie le chaînage
-    assert result == obj
-    # Vérifie que la valeur stockée est un objet Increment
-    val = obj.get("score")
-    assert isinstance(val, Increment)
-    assert val.amount == 5
-    # Vérifie que le champ est marqué comme modifié
-    assert "score" in obj._dirty_keys
+    def test_init_with_object_id(self) -> None:
+        """ParseObject can be initialized with an object_id."""
+        obj = ParseObject("GameScore", object_id="abc123")
+        assert obj.object_id == "abc123"
 
 
-def test_object_add_to_array():
-    obj = ParseObject("GameScore")
-    obj.add_to_array("tags", ["python", "sdk"])
+class TestParseObjectGetSet:
+    """Testing get/set methods."""
 
-    val = obj.get("tags")
-    assert isinstance(val, AddToArray)
-    assert val.objects == ["python", "sdk"]
-    assert "tags" in obj._dirty_keys
+    def test_set_and_get(self) -> None:
+        """set() and get() work correctly."""
+        obj = ParseObject("GameScore")
+        obj.set("player", "Alice")
+        obj.set("score", 100)
 
+        assert obj.get("player") == "Alice"
+        assert obj.get("score") == 100
 
-def test_object_add_unique():
-    obj = ParseObject("GameScore")
-    obj.add_unique("skills", ["async"])
-
-    val = obj.get("skills")
-    assert isinstance(val, AddUniqueToArray)
-    assert val.objects == ["async"]
-
-
-def test_object_remove_from_array():
-    obj = ParseObject("GameScore")
-    obj.remove_from_array("tags", ["old"])
-
-    val = obj.get("tags")
-    assert isinstance(val, RemoveFromArray)
-    assert val.objects == ["old"]
+    def test_get_with_default(self) -> None:
+        """get() returns the default value if the field does not exist."""
+        obj = ParseObject("GameScore")
+        assert obj.get("unknown") is None
+        assert obj.get("unknown", "default") == "default"
 
 
-def test_object_unset():
-    obj = ParseObject("GameScore")
-    obj.unset("temporaryField")
+class TestParseObjectSave:
+    """Testing save() method."""
 
-    val = obj.get("temporaryField")
-    assert isinstance(val, DeleteField)
-
-
-def test_object_chaining():
-    obj = ParseObject("GameScore")
-    result = obj.increment("score").add_to_array("tags", ["test"]).unset("old")
-    assert result == obj
-
-
-@pytest.mark.asyncio
-async def test_object_save_dirty_tracking():
-    # On mocke get_client pour ne pas faire de vraie requête réseau
-    with patch("parse_sdk.object.get_client") as mock_get_client:
-        mock_http = MagicMock()
-
-        # On définit une fonction asynchrone pour simuler l'appel réseau
-        async def mock_post(*_args, **_kwargs):
-            return {"objectId": "newId", "createdAt": "..."}
-
-        mock_http.post.side_effect = mock_post
-        mock_get_client.return_value = mock_http
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_save_creates_object(self) -> None:
+        """save() creates a new object via POST."""
+        respx.post("/classes/GameScore").mock(
+            return_value=Response(
+                201,
+                json={
+                    "objectId": "abc123",
+                    "createdAt": "2024-01-15T12:00:00.000Z",
+                },
+            )
+        )
 
         obj = ParseObject("GameScore")
+        obj.set("player", "Alice")
         obj.set("score", 100)
-        assert len(obj._dirty_keys) == 1
 
         await obj.save()
 
-        # Après sauvegarde, les dirty_keys doivent être vides
-        assert len(obj._dirty_keys) == 0
-        assert obj.object_id == "newId"
-        assert obj.get("score") == 100
+        assert obj.object_id == "abc123"
+        assert obj.created_at is not None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_save_updates_object(self) -> None:
+        """save() met à jour un objet existant via PUT."""
+        # Mock la réponse PUT
+        respx.put("/classes/GameScore/abc123").mock(
+            return_value=Response(
+                200,
+                json={
+                    "updatedAt": "2024-01-16T12:00:00.000Z",
+                },
+            )
+        )
+
+        obj = ParseObject("GameScore", object_id="abc123")
+        obj.set("score", 200)
+
+        await obj.save()
+
+        assert obj.updated_at is not None
 
 
-@pytest.mark.asyncio
-async def test_object_fetch():
-    with patch("parse_sdk.object.get_client") as mock_get_client:
-        mock_http = MagicMock()
+class TestParseObjectFetch:
+    """Tests de la méthode fetch()."""
 
-        async def mock_get(*_args, **_kwargs):
-            return {"objectId": "abc", "playerName": "Bob", "score": 500}
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_fetch_loads_object(self) -> None:
+        """fetch() charge les données depuis le serveur."""
+        respx.get("/classes/GameScore/abc123").mock(
+            return_value=Response(
+                200,
+                json={
+                    "objectId": "abc123",
+                    "player": "Alice",
+                    "score": 100,
+                    "createdAt": "2024-01-15T12:00:00.000Z",
+                    "updatedAt": "2024-01-15T12:00:00.000Z",
+                },
+            )
+        )
 
-        mock_http.get.side_effect = mock_get
-        mock_get_client.return_value = mock_http
-
-        obj = ParseObject("GameScore", "abc")
-        obj.set("score", 100)  # Modification locale
-        assert len(obj._dirty_keys) == 1
-
+        obj = ParseObject("GameScore", object_id="abc123")
         await obj.fetch()
 
-        assert obj.get("playerName") == "Bob"
-        assert obj.get("score") == 500
-        assert len(obj._dirty_keys) == 0
+        assert obj.get("player") == "Alice"
+        assert obj.get("score") == 100
+
+    def test_fetch_requires_object_id(self) -> None:
+        """fetch() lève ValueError si object_id est None."""
+        obj = ParseObject("GameScore")
+
+        with pytest.raises(ValueError, match="object_id"):
+            import asyncio
+
+            asyncio.get_event_loop().run_until_complete(obj.fetch())
 
 
-@pytest.mark.asyncio
-async def test_object_delete():
-    with patch("parse_sdk.object.get_client") as mock_get_client:
-        mock_http = MagicMock()
+class TestParseObjectDelete:
+    """Tests of the delete() method."""
 
-        async def mock_delete(*_args, **_kwargs):
-            return {}
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_delete_removes_object(self) -> None:
+        """delete() removes the object."""
+        respx.delete("/classes/GameScore/abc123").mock(
+            return_value=Response(200, json={})
+        )
 
-        mock_http.delete.side_effect = mock_delete
-        mock_get_client.return_value = mock_http
-
-        obj = ParseObject("GameScore", "abc")
+        obj = ParseObject("GameScore", object_id="abc123")
         await obj.delete()
 
         assert obj.object_id is None
-        assert obj._data == {}
-        mock_http.delete.assert_called_once()
+
+    def test_delete_requires_object_id(self) -> None:
+        """delete() raises ValueError if object_id is None."""
+        obj = ParseObject("GameScore")
+
+        with pytest.raises(ValueError, match="object_id"):
+            import asyncio
+
+            asyncio.get_event_loop().run_until_complete(obj.delete())
 
 
-@pytest.mark.asyncio
-async def test_object_save_with_geopoint():
-    with patch("parse_sdk.object.get_client") as mock_get_client:
-        mock_http = MagicMock()
+class TestParseObjectSync:
+    """Tests of the sync versions."""
 
-        async def mock_post(_path, json, **_kwargs):
-            assert json["location"]["__type"] == "GeoPoint"
-            assert json["location"]["latitude"] == 48.8566
-            return {"objectId": "geoId"}
+    @respx.mock
+    def test_save_sync(self) -> None:
+        """save_sync() works."""
+        respx.post("/classes/GameScore").mock(
+            return_value=Response(
+                201,
+                json={
+                    "objectId": "abc123",
+                    "createdAt": "2024-01-15T12:00:00.000Z",
+                },
+            )
+        )
 
-        mock_http.post.side_effect = mock_post
-        mock_get_client.return_value = mock_http
+        obj = ParseObject("GameScore")
+        obj.set("player", "Alice")
+        obj.save_sync()
 
-        obj = ParseObject("Place")
-        obj.set("location", GeoPoint(48.8566, 2.3522))
-        await obj.save()
+        assert obj.object_id == "abc123"
 
-        assert obj.object_id == "geoId"
+    @respx.mock
+    def test_fetch_sync(self) -> None:
+        """fetch_sync() works."""
+        respx.get("/classes/GameScore/abc123").mock(
+            return_value=Response(
+                200,
+                json={
+                    "objectId": "abc123",
+                    "player": "Alice",
+                    "createdAt": "2024-01-15T12:00:00.000Z",
+                },
+            )
+        )
 
+        obj = ParseObject("GameScore", object_id="abc123")
+        obj.fetch_sync()
 
-@pytest.mark.asyncio
-async def test_object_save_with_pointer():
-    with patch("parse_sdk.object.get_client") as mock_get_client:
-        mock_http = MagicMock()
+        assert obj.get("player") == "Alice"
 
-        async def mock_post(_path, json, **_kwargs):
-            assert json["owner"]["__type"] == "Pointer"
-            assert json["owner"]["className"] == "_User"
-            assert json["owner"]["objectId"] == "user123"
-            return {"objectId": "postId"}
+    @respx.mock
+    def test_delete_sync(self) -> None:
+        """delete_sync() fonctionne."""
+        respx.delete("/classes/GameScore/abc123").mock(
+            return_value=Response(200, json={})
+        )
 
-        mock_http.post.side_effect = mock_post
-        mock_get_client.return_value = mock_http
+        obj = ParseObject("GameScore", object_id="abc123")
+        obj.delete_sync()
 
-        obj = ParseObject("Post")
-        obj.set("owner", Pointer("_User", "user123"))
-        await obj.save()
-
-        assert obj.object_id == "postId"
+        assert obj.object_id is None

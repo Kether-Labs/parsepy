@@ -1,318 +1,234 @@
 """
-Gestion des objets Parse (ParseObject).
-Lecture, modification et sauvegarde des données.
+ParseObject — Represents a record in a Parse class.
+
+This is the core of the SDK. Each ParseObject corresponds to a row in
+a Parse Server table (called a “class”).
 """
 
 from __future__ import annotations
 
-from typing import Any
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from ._types import decode_parse_value, encode_parse_value
 from .client import get_client
 
+if TYPE_CHECKING:
+    pass
+
 
 class ParseObject:
-    """Représente un objet stocké sur Parse Server.
+    """Represents an object stored in Parse Server.
+
+    ParseObject is the base class for all Parse entities.
+    It handles the full CRUD lifecycle: create, read,
+    update, and delete.
 
     Args:
-        class_name: Le nom de la classe Parse (ex: "GameScore").
-        object_id: L'identifiant unique de l'objet (si déjà existant).
+        class_name: Name of the Parse class (e.g., “GameScore”, “_User”).
+        object_id: Object ID (optional for new objects).
+
+    Attributes:
+        object_id: The object’s unique ID (populated after save()).
+        created_at: Creation date (populated after save()).
+        updated_at: Last modification date (populated after save()).
+
+    Example:
+        >>> obj = ParseObject(“GameScore”)
+        >>> obj.set(“player”, “Alice”)
+        >>> obj.set(“score”, 100)
+        >>> await obj.save()
+        >>> print(obj.object_id)  # “Ed1nuqPvcm”
     """
 
-    def __init__(self, class_name: str, object_id: str | None = None) -> None:
-        self.class_name = class_name
-        self.object_id = object_id
-
+    def __init__(
+        self,
+        class_name: str,
+        object_id: str | None = None,
+    ) -> None:
+        self._class_name = class_name
+        self._object_id = object_id
         self._data: dict[str, Any] = {}
-        self._dirty_keys: set[str] = set()
+        self._dirty: set[str] = set()
 
-    def get(self, key: str, default: Any = None) -> Any:
-        """Récupère la valeur d'un champ.
+        # System attributes (populated by Parse)
+        self.created_at: datetime | None = None
+        self.updated_at: datetime | None = None
+
+    @property
+    def class_name(self) -> str:
+        """Name of the Parse class."""
+        return self._class_name
+
+    @property
+    def object_id(self) -> str | None:
+        """Unique identifier of the object."""
+        return self._object_id
+
+    # ------------------------------------------------------------------
+    # Access to data
+    # ------------------------------------------------------------------
+
+    def get(self, key: str, default: Any | None = None) -> Any:
+        """Retrieves the value of a field.
 
         Args:
-            key: Le nom du champ.
-            default: Valeur par défaut si le champ n'existe pas.
+            key: Field name.
+            default: Default value if the field does not exist.
 
         Returns:
-            La valeur du champ (décodée si type spécial Parse).
+            The value of the field or the default value.
         """
-        value = self._data.get(key, default)
-        return decode_parse_value(value)
+        return self._data.get(key, default)
 
-    def set(self, key: str, value: Any) -> ParseObject:
-        """Définit la valeur d'un champ.
+    def set(self, key: str, value: Any) -> None:
+        """Sets the value of a field.
 
         Args:
-            key: Le nom du champ.
-            value: La valeur à enregistrer.
-
-        Returns:
-            L'instance actuelle (pour le chaînage).
+            key: Field name.
+            value: Value to set.
         """
         self._data[key] = value
-        self._dirty_keys.add(key)
+        self._dirty.add(key)
 
-        return self
+    # ------------------------------------------------------------------
+    # CRUD Operations - Async
+    # ------------------------------------------------------------------
 
-    async def save(
-        self, use_master_key: bool = False, session_token: str | None = None
-    ) -> None:
-        """Sauvegarde l'objet sur Parse Server.
+    async def save(self) -> None:
+        """Saves the object to Parse Server.
 
-        Cette méthode envoie uniquement les champs modifiés (dirty).
+        - If object_id is None → POST (create)
+        - Otherwise → PUT (update)
 
-        Args:
-            use_master_key: Utilise le Master Key si True.
-            session_token: Session token à utiliser pour cette requête.
+        After save(), the object_id, created_at, and updated_at
+        attributes are populated from the server response.
 
         Raises:
-            ParseError: Si le serveur retourne une erreur.
+            ParseError: If the request fails.
         """
-        if not self._dirty_keys:
-            return
-
-        payload = {key: encode_parse_value(self._data[key]) for key in self._dirty_keys}
         client = get_client()
 
-        if self.object_id:
-            path = f"/classes/{self.class_name}/{self.object_id}"
-            response = await client.put(
-                path,
-                json=payload,
-                use_master_key=use_master_key,
-                session_token=session_token,
-            )
+        # Prepare the data to be sent (only the “dirty” fields for PUT)
+
+        if self._object_id:
+
+            data = {k: encode_parse_value(self._data[k]) for k in self._dirty}
+            path = f"/classes/{self._class_name}/{self._object_id}"
+            response = await client.put(path, json=data)
+
         else:
-            path = f"/classes/{self.class_name}"
-            response = await client.post(
-                path,
-                json=payload,
-                use_master_key=use_master_key,
-                session_token=session_token,
-            )
+            data = {k: encode_parse_value(v) for k, v in self._data.items()}
+            path = f"/classes/{self._class_name}"
+            response = await client.post(path, json=data)
 
-            if "objectId" in response:
-                self.object_id = response["objectId"]
+        self._update_from_response(response)
+        self._dirty.clear()
 
-        self._data.update(response)
-        self._dirty_keys.clear()
+    async def fetch(self) -> None:
+        """Loads the object's data from Parse Server.
 
-    def save_sync(
-        self, use_master_key: bool = False, session_token: str | None = None
-    ) -> None:
-        """Version synchrone de `save()`.
+        Throws:
+            ParseObjectNotFoundError: If the object does not exist.
+            ValueError: If `object_id` is undefined.
+        """
+        if not self._object_id:
+            raise ValueError("object_id est requis pour fetch()")
 
-        Args:
-            use_master_key: Utilise le Master Key si True.
-            session_token: Session token à utiliser pour cette requête.
+        client = get_client()
+        path = f"/classes/{self._class_name}/{self._object_id}"
+        response = await client.get(path)
+
+        # La réponse contient tous les champs
+        self._populate_from_get(response)
+
+    async def delete(self) -> None:
+        """Removes the object from the Parse Server.
 
         Raises:
-            ParseError: Si le serveur retourne une erreur.
+            ParseObjectNotFoundError: If the object does not exist.
+            ValueError: If `object_id` is undefined.
         """
-        if not self._dirty_keys:
-            return
+        if not self._object_id:
+            raise ValueError("object_id is required for delete()")
 
-        payload = {key: encode_parse_value(self._data[key]) for key in self._dirty_keys}
+        client = get_client()
+        path = f"/classes/{self._class_name}/{self._object_id}"
+        await client.delete(path)
+
+        # Reset the object
+        self._object_id = None
+        self._data.clear()
+        self._dirty.clear()
+
+    # ------------------------------------------------------------------
+    # CRUD Operations - Sync
+    # ------------------------------------------------------------------
+
+    def save_sync(self) -> None:
+        """Synchronous version of save()."""
         client = get_client()
 
-        if self.object_id:
-            path = f"/classes/{self.class_name}/{self.object_id}"
-            response = client.put_sync(
-                path,
-                json=payload,
-                use_master_key=use_master_key,
-                session_token=session_token,
-            )
+        if self._object_id:
+            data = {k: encode_parse_value(self._data[k]) for k in self._dirty}
+            path = f"/classes/{self._class_name}/{self._object_id}"
+            response = client.request_sync("PUT", path, json=data)
         else:
-            path = f"/classes/{self.class_name}"
-            response = client.post_sync(
-                path,
-                json=payload,
-                use_master_key=use_master_key,
-                session_token=session_token,
-            )
+            data = {k: encode_parse_value(self._data[k]) for k in self._data}
+            path = f"/classes/{self._class_name}"
+            response = client.request_sync("POST", path, json=data)
 
-            if "objectId" in response:
-                self.object_id = response["objectId"]
+        self._update_from_response(response)
+        self._dirty.clear()
 
-        self._data.update(response)
-        self._dirty_keys.clear()
-
-    async def fetch(
-        self, use_master_key: bool = False, session_token: str | None = None
-    ) -> ParseObject:
-        """Récupère les dernières données de l'objet depuis le serveur.
-
-        Met à jour l'instance actuelle et efface les modifications locales non sauvegardées.
-
-        Args:
-            use_master_key: Utilise le Master Key si True.
-            session_token: Session token à utiliser pour cette requête.
-
-        Returns:
-            L'instance actuelle de ParseObject.
-
-        Raises:
-            RuntimeError: Si l'objet n'a pas d'objectId.
-            ParseError: Si le serveur retourne une erreur.
-        """
-        if not self.object_id:
-            raise RuntimeError("Impossible de fetch un objet sans objectId")
+    def fetch_sync(self) -> None:
+        """Synchronous version of fetch()."""
+        if not self._object_id:
+            raise ValueError("object_id is required for fetch_sync()")
 
         client = get_client()
-        path = f"/classes/{self.class_name}/{self.object_id}"
-        response = await client.get(
-            path, use_master_key=use_master_key, session_token=session_token
-        )
+        path = f"/classes/{self._class_name}/{self._object_id}"
+        response = client.request_sync("GET", path)
 
-        self._data = response
-        self._dirty_keys.clear()
-        return self
+        self._populate_from_get(response)
 
-    def fetch_sync(
-        self, use_master_key: bool = False, session_token: str | None = None
-    ) -> ParseObject:
-        """Version synchrone de `fetch()`.
-
-        Args:
-            use_master_key: Utilise le Master Key si True.
-            session_token: Session token à utiliser pour cette requête.
-
-        Returns:
-            L'instance actuelle de ParseObject.
-
-        Raises:
-            RuntimeError: Si l'objet n'a pas d'objectId.
-        """
-        if not self.object_id:
-            raise RuntimeError("Impossible de fetch un objet sans objectId")
+    def delete_sync(self) -> None:
+        """Synchronous version of delete()."""
+        if not self._object_id:
+            raise ValueError("object_id is required for delete_sync()")
 
         client = get_client()
-        path = f"/classes/{self.class_name}/{self.object_id}"
-        response = client.get_sync(
-            path, use_master_key=use_master_key, session_token=session_token
-        )
+        path = f"/classes/{self._class_name}/{self._object_id}"
+        client.request_sync("DELETE", path)
 
-        self._data = response
-        self._dirty_keys.clear()
-        return self
-
-    async def delete(
-        self, use_master_key: bool = False, session_token: str | None = None
-    ) -> None:
-        """Supprime l'objet sur Parse Server.
-
-        Args:
-            use_master_key: Utilise le Master Key si True.
-            session_token: Session token à utiliser pour cette requête.
-
-        Raises:
-            RuntimeError: Si l'objet n'a pas d'objectId.
-            ParseError: Si le serveur retourne une erreur.
-        """
-        if not self.object_id:
-            raise RuntimeError("Impossible de supprimer un objet sans objectId")
-
-        client = get_client()
-        path = f"/classes/{self.class_name}/{self.object_id}"
-        await client.delete(
-            path, use_master_key=use_master_key, session_token=session_token
-        )
-
-        self.object_id = None
+        self._object_id = None
         self._data.clear()
-        self._dirty_keys.clear()
+        self._dirty.clear()
 
-    def delete_sync(
-        self, use_master_key: bool = False, session_token: str | None = None
-    ) -> None:
-        """Version synchrone de `delete()`.
+    # ------------------------------------------------------------------
+    # Internal methods
+    # ------------------------------------------------------------------
 
-        Args:
-            use_master_key: Utilise le Master Key si True.
-            session_token: Session token à utiliser pour cette requête.
+    def _update_from_response(self, response: dict[str, Any]) -> None:
+        """Updates the object's attributes from a POST/PUT response."""
+        if "objectId" in response:
+            self._object_id = response["objectId"]
+        if "createdAt" in response:
+            self.created_at = decode_parse_value(response["createdAt"])
+        if "updatedAt" in response:
+            self.updated_at = decode_parse_value(response["updatedAt"])
 
-        Raises:
-            RuntimeError: Si l'objet n'a pas d'objectId.
-        """
-        if not self.object_id:
-            raise RuntimeError("Impossible de supprimer un objet sans objectId")
+    def _populate_from_get(self, response: dict[str, Any]) -> None:
+        """Populates the object from a GET response."""
+        # System fields
+        self._object_id = response.get("objectId")
+        self.created_at = decode_parse_value(response.get("createdAt"))
+        self.updated_at = decode_parse_value(response.get("updatedAt"))
 
-        client = get_client()
-        path = f"/classes/{self.class_name}/{self.object_id}"
-        client.delete_sync(
-            path, use_master_key=use_master_key, session_token=session_token
-        )
+        # Autres champs
+        for key, value in response.items():
+            if key not in ("objectId", "createdAt", "updatedAt", "className"):
+                self._data[key] = decode_parse_value(value)
 
-        self.object_id = None
-        self._data.clear()
-        self._dirty_keys.clear()
-
-    def increment(self, key: str, amount: int = 1) -> ParseObject:
-        """Incrémente un champ numérique.
-
-        Args:
-            key: Le nom du champ.
-            amount: La valeur à ajouter (défaut: 1).
-
-        Returns:
-            L'instance actuelle (pour le chaînage).
-        """
-        from ._types import Increment
-
-        return self.set(key, Increment(amount))
-
-    def add_to_array(self, key: str, values: list[Any]) -> ParseObject:
-        """Ajoute des éléments à un champ tableau.
-
-        Args:
-            key: Le nom du champ.
-            values: Liste des valeurs à ajouter.
-
-        Returns:
-            L'instance actuelle (pour le chaînage).
-        """
-        from ._types import AddToArray
-
-        return self.set(key, AddToArray(values))
-
-    def add_unique(self, key: str, values: list[Any]) -> ParseObject:
-        """Ajoute des éléments à un tableau seulement s'ils sont absents.
-
-        Args:
-            key: Le nom du champ.
-            values: Liste des valeurs à ajouter.
-
-        Returns:
-            L'instance actuelle (pour le chaînage).
-        """
-        from ._types import AddUniqueToArray
-
-        return self.set(key, AddUniqueToArray(values))
-
-    def remove_from_array(self, key: str, values: list[Any]) -> ParseObject:
-        """Supprime des éléments d'un champ tableau.
-
-        Args:
-            key: Le nom du champ.
-            values: Liste des éléments à supprimer.
-
-        Returns:
-            L'instance actuelle (pour le chaînage).
-        """
-        from ._types import RemoveFromArray
-
-        return self.set(key, RemoveFromArray(values))
-
-    def unset(self, key: str) -> ParseObject:
-        """Supprime un champ de l'objet.
-
-        Args:
-            key: Le nom du champ à supprimer.
-
-        Returns:
-            L'instance actuelle (pour le chaînage).
-        """
-        from ._types import DeleteField
-
-        return self.set(key, DeleteField())
+    def __repr__(self) -> str:
+        return f"ParseObject({self._class_name!r}, object_id={self._object_id!r})"
